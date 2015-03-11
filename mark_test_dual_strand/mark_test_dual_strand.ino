@@ -519,8 +519,6 @@ void colorWipeEntity(uint32_t c, uint8_t wait) {
         else {
           //TODO: need maths here
           pixelIndex = arrUglyReverse[i];
-          //pixelIndex  = i - (STRAND_START_LED - 1);
-          
         }
         setPixelColor(live_strand, pixelIndex, c);
         update_strand(live_strand);
