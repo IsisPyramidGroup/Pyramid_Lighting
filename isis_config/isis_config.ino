@@ -7,6 +7,47 @@
 // The interactive user chooses which slave (by address) is to be programmed.
 //
 // 2015-03-18 ptw
+// 2015-03-29 ptw updated for as-built configuration
+
+/*
+Starfish strands are mounted in four configurations:
+A = 8 6-foot sticks of 18 pixels + power cable, connectors both ends
+B = 3 8-foot sticks of 24 pixels + power cable, connector at input end, joined at output end.
+C = 2 8-foot sticks of 24 pixels, no power. No passthru connector at output end.
+D = 6 12-foot sticks of 36 pixels, no power.
+
+Caroushell strips are mounted on the upper diagonals.
+Type A sticks are mounted on the lower diagonals.
+The B, C, and D sticks are arranged on the lower edge as shown:
+
+ B D - D 
+D       B
+-       D
+D       -
+B       D
+ C     C
+The hyphens represent breaks in the wiring. No wires are connected at these places.
+The bottom in this picture is the front door.
+ 
+ Number the corners like this:
+  3      4 
+ 2        5
+ 
+ 1        6
+  0      7
+
+So here's what we have at each corner:
+
+0 = A,C.   42 pixels. Power at pixel 0.
+1 = A,B,D. 78 pixels. Power at pixel 0 and 42.
+2 = A,D.   54 pixels. Power at pixel 0.
+3 = A,B,D. 78 pixels. Power at pixel 0 and 42.
+4 = A,D.   54 pixels. Power at pixel 0.
+5 = A,B,D. 78 pixels. Power at pixel 0 and 42.
+6 = A,D.   54 pixels. Power at pixel 0.
+7 = A,C.   42 pixels. Power at pixel 0.
+Total:    480 pixels.
+*/
 
 #include <EEPROM.h>
 
@@ -29,303 +70,308 @@ unsigned int bitmap = 0x0000;
 // Front edge (spanning the door) 11
 //
 
-#define  EDGE_LENGTH  72           // total pixels of a complete bottom edge
-#define  FRONT_SEGMENT_LENGTH  25  // pixels to left or right of doorway
+#define  CAROUSHELL_STRIP_LENGTH    50  // pixels in the upper diagonal
+#define  LOWER_DIAGONAL_LENGTH      18  // pixels in the 6' lower diagonal
+#define  DIAGONAL_LENGTH    (CAROUSHELL_STRIP_LENGTH+LOWER_DIAGONAL_LENGTH)
+#define  SIDE_LONG_HALF_LENGTH  60      // pixels in the 8'+12' "half" of a side or back
+#define  SIDE_SHORT_HALF_LENGTH 36      // pixels in the 12' "half" of a side or back
+#define  FRONT_SEGMENT_LENGTH   24      // pixels to left or right of doorway
+#define  SIDE_LENGTH        (SIDE_LONG_HALF_LENGTH+SIDE_SHORT_HALF_LENGTH)
 
 uint8_t slave_00[] = {
-  0,             // this slave's address
-  0x00, 0x01,    // version number, always 0x0001 for now
-  0,             // Caroushell-style strands
-  50,            // pixels in strand
-  1,             // number of entities managed by this slave
+  0,                        // this slave's address
+  0x01, 0x00,               // version number, always 0x0001 for now
+  0,                        // Caroushell-style strands
+  CAROUSHELL_STRIP_LENGTH,  // pixels in strand
+  1,                        // number of entities managed by this slave
   // first entity descriptor
-  0,             // entity address, diagonal 0
-  68,            // pixels in the entire entity
-  18,            // entity index of first pixel of this segment
-  50,            // number of pixels in this segment
-  0,             // slave index of first pixel of this segment
-  0,             // indexes are not reversed
+  0,                        // entity address, diagonal 0
+  DIAGONAL_LENGTH,          // pixels in the entire entity
+  LOWER_DIAGONAL_LENGTH,    // entity index of first pixel of this segment
+  CAROUSHELL_STRIP_LENGTH,  // number of pixels in this segment
+  0,                        // slave index of first pixel of this segment
+  0,                        // indexes are not reversed
 };
 
 uint8_t slave_01[] = {
-  1,             // this slave's address
-  0x00, 0x01,    // version number, always 0x0001 for now
-  0,             // Caroushell-style strands
-  50,            // pixels in strand
-  1,             // number of entities managed by this slave
+  1,                        // this slave's address
+  0x01, 0x00,               // version number, always 0x0001 for now
+  0,                        // Caroushell-style strands
+  CAROUSHELL_STRIP_LENGTH,  // pixels in strand
+  1,                        // number of entities managed by this slave
   // first entity descriptor
-  1,             // entity address, diagonal 1
-  68,            // pixels in the entire entity
-  18,            // entity index of first pixel of this segment
-  50,            // number of pixels in this segment
-  0,             // slave index of first pixel of this segment
-  0,             // indexes are not reversed
+  1,                        // entity address, diagonal 1
+  DIAGONAL_LENGTH,          // pixels in the entire entity
+  LOWER_DIAGONAL_LENGTH,    // entity index of first pixel of this segment
+  CAROUSHELL_STRIP_LENGTH,  // number of pixels in this segment
+  0,                        // slave index of first pixel of this segment
+  0,                        // indexes are not reversed
 };
 
 uint8_t slave_02[] = {
-  2,             // this slave's address
-  0x00, 0x01,    // version number, always 0x0001 for now
-  0,             // Caroushell-style strands
-  50,            // pixels in strand
-  1,             // number of entities managed by this slave
+  2,                        // this slave's address
+  0x01, 0x00,               // version number, always 0x0001 for now
+  0,                        // Caroushell-style strands
+  CAROUSHELL_STRIP_LENGTH,  // pixels in strand
+  1,                        // number of entities managed by this slave
   // first entity descriptor
-  2,             // entity address, diagonal 2
-  68,            // pixels in the entire entity
-  18,            // entity index of first pixel of this segment
-  50,            // number of pixels in this segment
-  0,             // slave index of first pixel of this segment
-  0,             // indexes are not reversed
+  2,                        // entity address, diagonal 2
+  DIAGONAL_LENGTH,          // pixels in the entire entity
+  LOWER_DIAGONAL_LENGTH,    // entity index of first pixel of this segment
+  CAROUSHELL_STRIP_LENGTH,  // number of pixels in this segment
+  0,                        // slave index of first pixel of this segment
+  0,                        // indexes are not reversed
 };
 
 uint8_t slave_03[] = {
-  3,             // this slave's address
-  0x00, 0x01,    // version number, always 0x0001 for now
-  0,             // Caroushell-style strands
-  50,            // pixels in strand
-  1,             // number of entities managed by this slave
+  3,                        // this slave's address
+  0x01, 0x00,               // version number, always 0x0001 for now
+  0,                        // Caroushell-style strands
+  CAROUSHELL_STRIP_LENGTH,  // pixels in strand
+  1,                        // number of entities managed by this slave
   // first entity descriptor
-  3,             // entity address, diagonal 3
-  68,            // pixels in the entire entity
-  18,            // entity index of first pixel of this segment
-  50,            // number of pixels in this segment
-  0,             // slave index of first pixel of this segment
-  0,             // indexes are not reversed
+  3,                        // entity address, diagonal 3
+  DIAGONAL_LENGTH,          // pixels in the entire entity
+  LOWER_DIAGONAL_LENGTH,    // entity index of first pixel of this segment
+  CAROUSHELL_STRIP_LENGTH,  // number of pixels in this segment
+  0,                        // slave index of first pixel of this segment
+  0,                        // indexes are not reversed
 };
 
 uint8_t slave_04[] = {
-  4,             // this slave's address
-  0x00, 0x01,    // version number, always 0x0001 for now
-  0,             // Caroushell-style strands
-  50,            // pixels in strand
-  1,             // number of entities managed by this slave
+  4,                        // this slave's address
+  0x01, 0x00,               // version number, always 0x0001 for now
+  0,                        // Caroushell-style strands
+  CAROUSHELL_STRIP_LENGTH,  // pixels in strand
+  1,                        // number of entities managed by this slave
   // first entity descriptor
-  4,             // entity address, diagonal 4
-  68,            // pixels in the entire entity
-  18,            // entity index of first pixel of this segment
-  50,            // number of pixels in this segment
-  0,             // slave index of first pixel of this segment
-  0,             // indexes are not reversed
+  4,                        // entity address, diagonal 4
+  DIAGONAL_LENGTH,          // pixels in the entire entity
+  LOWER_DIAGONAL_LENGTH,    // entity index of first pixel of this segment
+  CAROUSHELL_STRIP_LENGTH,  // number of pixels in this segment
+  0,                        // slave index of first pixel of this segment
+  0,                        // indexes are not reversed
 };
 
 uint8_t slave_05[] = {
-  5,             // this slave's address
-  0x00, 0x01,    // version number, always 0x0001 for now
-  0,             // Caroushell-style strands
-  50,            // pixels in strand
-  1,             // number of entities managed by this slave
+  5,                        // this slave's address
+  0x01, 0x00,               // version number, always 0x0001 for now
+  0,                        // Caroushell-style strands
+  CAROUSHELL_STRIP_LENGTH,  // pixels in strand
+  1,                        // number of entities managed by this slave
   // first entity descriptor
-  5,             // entity address, diagonal 5
-  68,            // pixels in the entire entity
-  18,            // entity index of first pixel of this segment
-  50,            // number of pixels in this segment
-  0,             // slave index of first pixel of this segment
-  0,             // indexes are not reversed
+  5,                        // entity address, diagonal 5
+  DIAGONAL_LENGTH,          // pixels in the entire entity
+  LOWER_DIAGONAL_LENGTH,    // entity index of first pixel of this segment
+  CAROUSHELL_STRIP_LENGTH,  // number of pixels in this segment
+  0,                        // slave index of first pixel of this segment
+  0,                        // indexes are not reversed
 };
 
 uint8_t slave_06[] = {
-  6,             // this slave's address
-  0x00, 0x01,    // version number, always 0x0001 for now
-  0,             // Caroushell-style strands
-  50,            // pixels in strand
-  1,             // number of entities managed by this slave
+  6,                        // this slave's address
+  0x01, 0x00,               // version number, always 0x0001 for now
+  0,                        // Caroushell-style strands
+  CAROUSHELL_STRIP_LENGTH,  // pixels in strand
+  1,                        // number of entities managed by this slave
   // first entity descriptor
-  6,             // entity address, diagonal 6
-  68,            // pixels in the entire entity
-  18,            // entity index of first pixel of this segment
-  50,            // number of pixels in this segment
-  0,             // slave index of first pixel of this segment
-  0,             // indexes are not reversed
+  6,                        // entity address, diagonal 6
+  DIAGONAL_LENGTH,          // pixels in the entire entity
+  LOWER_DIAGONAL_LENGTH,    // entity index of first pixel of this segment
+  CAROUSHELL_STRIP_LENGTH,  // number of pixels in this segment
+  0,                        // slave index of first pixel of this segment
+  0,                        // indexes are not reversed
 };
 
 uint8_t slave_07[] = {
-  7,             // this slave's address
-  0x00, 0x01,    // version number, always 0x0001 for now
-  0,             // Caroushell-style strands
-  50,            // pixels in strand
-  1,             // number of entities managed by this slave
+  7,                        // this slave's address
+  0x01, 0x00,               // version number, always 0x0001 for now
+  0,                        // Caroushell-style strands
+  CAROUSHELL_STRIP_LENGTH,  // pixels in strand
+  1,                        // number of entities managed by this slave
   // first entity descriptor
-  7,             // entity address, diagonal 7
-  68,            // pixels in the entire entity
-  18,            // entity index of first pixel of this segment
-  50,            // number of pixels in this segment
-  0,             // slave index of first pixel of this segment
-  0,             // indexes are not reversed
+  7,                        // entity address, diagonal 7
+  DIAGONAL_LENGTH,          // pixels in the entire entity
+  LOWER_DIAGONAL_LENGTH,    // entity index of first pixel of this segment
+  CAROUSHELL_STRIP_LENGTH,  // number of pixels in this segment
+  0,                        // slave index of first pixel of this segment
+  0,                        // indexes are not reversed
 };
 
 uint8_t slave_08[] = {
-  8,             // this slave's address
-  0x00, 0x01,    // version number, always 0x0001 for now
-  1,             // Starfish-style strands
-  18+FRONT_SEGMENT_LENGTH, // pixels in strand
-  2,             // number of entities managed by this slave
+  8,                                            // this slave's address
+  0x01, 0x00,                                   // version number, always 0x0001 for now
+  1,                                            // Starfish-style strands
+  LOWER_DIAGONAL_LENGTH+FRONT_SEGMENT_LENGTH,   // pixels in strand
+  2,                                            // number of entities managed by this slave
   // first entity descriptor
-  0,             // entity address, diagonal 0
-  68,            // pixels in the entire entity
-  0,             // entity index of first pixel of this segment
-  18,            // number of pixels in this segment
-  17,            // slave index of first pixel of this segment
-  1,             // indexes are reversed
+  0,                        // entity address, diagonal 0
+  DIAGONAL_LENGTH,          // pixels in the entire entity
+  0,                        // entity index of first pixel of this segment
+  LOWER_DIAGONAL_LENGTH,    // number of pixels in this segment
+  LOWER_DIAGONAL_LENGTH-1,  // slave index of first pixel of this segment
+  1,                        // indexes are reversed
   // second entity descriptor
-  11,            // entity address, front edge
-  EDGE_LENGTH,   // pixels in the entire entity
-  EDGE_LENGTH-FRONT_SEGMENT_LENGTH-1,  // entity index of first pixel of this segment
-  FRONT_SEGMENT_LENGTH,  // number of pixels in this segment
-  18+FRONT_SEGMENT_LENGTH,  // slave index of first pixel of this segment
-  1,             // indexes are reversed
+  11,                                           // entity address, front edge
+  SIDE_LENGTH,                                  // pixels in the entire entity
+  SIDE_LENGTH-FRONT_SEGMENT_LENGTH-1,           // entity index of first pixel of this segment
+  FRONT_SEGMENT_LENGTH,                         // number of pixels in this segment
+  LOWER_DIAGONAL_LENGTH+FRONT_SEGMENT_LENGTH-1, // slave index of first pixel of this segment
+  1,                                            // indexes are reversed
 };
 
 uint8_t slave_09[] = {
-  9,             // this slave's address
-  0x00, 0x01,    // version number, always 0x0001 for now
-  1,             // Starfish-style strands
-  18+EDGE_LENGTH/2, // pixels in strand
-  2,             // number of entities managed by this slave
+  9,                                            // this slave's address
+  0x01, 0x00,                                   // version number, always 0x0001 for now
+  1,                                            // Starfish-style strands
+  LOWER_DIAGONAL_LENGTH+SIDE_LONG_HALF_LENGTH,  // pixels in strand
+  2,                                            // number of entities managed by this slave
   // first entity descriptor
-  1,             // entity address, diagonal 1
-  68,            // pixels in the entire entity
-  0,             // entity index of first pixel of this segment
-  18,            // number of pixels in this segment
-  17,            // slave index of first pixel of this segment
-  1,             // indexes are reversed
+  1,                        // entity address, diagonal 1
+  DIAGONAL_LENGTH,          // pixels in the entire entity
+  0,                        // entity index of first pixel of this segment
+  LOWER_DIAGONAL_LENGTH,    // number of pixels in this segment
+  LOWER_DIAGONAL_LENGTH-1,  // slave index of first pixel of this segment
+  1,                        // indexes are reversed
   // second entity descriptor
-  8,             // entity address, left edge
-  EDGE_LENGTH,   // pixels in the entire entity
-  0,             // entity index of first pixel of this segment
-  EDGE_LENGTH/2, // number of pixels in this segment
-  18,            // slave index of first pixel of this segment
-  0,             // indexes are not reversed
+  8,                        // entity address, left edge
+  SIDE_LENGTH,              // pixels in the entire entity
+  0,                        // entity index of first pixel of this segment
+  SIDE_LONG_HALF_LENGTH,    // number of pixels in this segment
+  LOWER_DIAGONAL_LENGTH,    // slave index of first pixel of this segment
+  0,                        // indexes are not reversed
 };
 
 uint8_t slave_10[] = {
-  10,            // this slave's address
-  0x00, 0x01,    // version number, always 0x0001 for now
-  1,             // Starfish-style strands
-  18+EDGE_LENGTH/2, // pixels in strand
-  2,             // number of entities managed by this slave
+  10,                                           // this slave's address
+  0x01, 0x00,                                   // version number, always 0x0001 for now
+  1,                                            // Starfish-style strands
+  LOWER_DIAGONAL_LENGTH+SIDE_SHORT_HALF_LENGTH, // pixels in strand
+  2,                                            // number of entities managed by this slave
   // first entity descriptor
-  2,             // entity address, diagonal 2
-  68,            // pixels in the entire entity
-  0,             // entity index of first pixel of this segment
-  18,            // number of pixels in this segment
-  17,            // slave index of first pixel of this segment
-  1,             // indexes are reversed
+  2,                        // entity address, diagonal 2
+  DIAGONAL_LENGTH,          // pixels in the entire entity
+  0,                        // entity index of first pixel of this segment
+  LOWER_DIAGONAL_LENGTH,    // number of pixels in this segment
+  LOWER_DIAGONAL_LENGTH-1,  // slave index of first pixel of this segment
+  1,                        // indexes are reversed
   // second entity descriptor
-  8,             // entity address, left edge
-  EDGE_LENGTH,   // pixels in the entire entity
-  EDGE_LENGTH/2, // entity index of first pixel of this segment
-  EDGE_LENGTH/2, // number of pixels in this segment
-  18+EDGE_LENGTH/2,  // slave index of first pixel of this segment
-  1,             // indexes are reversed
+  8,                                                // entity address, left edge
+  SIDE_LENGTH,                                      // pixels in the entire entity
+  SIDE_LONG_HALF_LENGTH,                            // entity index of first pixel of this segment
+  SIDE_SHORT_HALF_LENGTH,                           // number of pixels in this segment
+  LOWER_DIAGONAL_LENGTH+SIDE_SHORT_HALF_LENGTH-1,   // slave index of first pixel of this segment
+  1,                                                // indexes are reversed
 };
 
 uint8_t slave_11[] = {
-  11,            // this slave's address
-  0x00, 0x01,    // version number, always 0x0001 for now
-  1,             // Starfish-style strands
-  18+EDGE_LENGTH/2, // pixels in strand
-  2,             // number of entities managed by this slave
+  11,                                           // this slave's address
+  0x01, 0x00,                                   // version number, always 0x0001 for now
+  1,                                            // Starfish-style strands
+  LOWER_DIAGONAL_LENGTH+SIDE_LONG_HALF_LENGTH,  // pixels in strand
+  2,                                            // number of entities managed by this slave
   // first entity descriptor
-  3,             // entity address, diagonal 3
-  68,            // pixels in the entire entity
-  0,             // entity index of first pixel of this segment
-  18,            // number of pixels in this segment
-  17,            // slave index of first pixel of this segment
-  1,             // indexes are reversed
+  3,                        // entity address, diagonal 3
+  DIAGONAL_LENGTH,          // pixels in the entire entity
+  0,                        // entity index of first pixel of this segment
+  LOWER_DIAGONAL_LENGTH,    // number of pixels in this segment
+  LOWER_DIAGONAL_LENGTH-1,  // slave index of first pixel of this segment
+  1,                        // indexes are reversed
   // second entity descriptor
-  9,             // entity address, back edge
-  EDGE_LENGTH,   // pixels in the entire entity
-  0,             // entity index of first pixel of this segment
-  EDGE_LENGTH/2, // number of pixels in this segment
-  18,            // slave index of first pixel of this segment
-  0,             // indexes are not reversed
+  9,                        // entity address, back edge
+  SIDE_LENGTH,              // pixels in the entire entity
+  0,                        // entity index of first pixel of this segment
+  SIDE_LONG_HALF_LENGTH,    // number of pixels in this segment
+  LOWER_DIAGONAL_LENGTH,    // slave index of first pixel of this segment
+  0,                        // indexes are not reversed
 };
 
 uint8_t slave_12[] = {
-  12,            // this slave's address
-  0x00, 0x01,    // version number, always 0x0001 for now
-  1,             // Starfish-style strands
-  18+EDGE_LENGTH/2, // pixels in strand
-  2,             // number of entities managed by this slave
+  12,                                           // this slave's address
+  0x01, 0x00,                                   // version number, always 0x0001 for now
+  1,                                            // Starfish-style strands
+  LOWER_DIAGONAL_LENGTH+SIDE_SHORT_HALF_LENGTH, // pixels in strand
+  2,                                            // number of entities managed by this slave
   // first entity descriptor
-  4,             // entity address, diagonal 4
-  68,            // pixels in the entire entity
-  0,             // entity index of first pixel of this segment
-  18,            // number of pixels in this segment
-  17,            // slave index of first pixel of this segment
-  1,             // indexes are reversed
+  4,                        // entity address, diagonal 4
+  DIAGONAL_LENGTH,          // pixels in the entire entity
+  0,                        // entity index of first pixel of this segment
+  LOWER_DIAGONAL_LENGTH,    // number of pixels in this segment
+  LOWER_DIAGONAL_LENGTH-1,  // slave index of first pixel of this segment
+  1,                        // indexes are reversed
   // second entity descriptor
-  9,             // entity address, back edge
-  EDGE_LENGTH,   // pixels in the entire entity
-  EDGE_LENGTH/2, // entity index of first pixel of this segment
-  EDGE_LENGTH/2, // number of pixels in this segment
-  18+EDGE_LENGTH/2,  // slave index of first pixel of this segment
-  1,             // indexes are reversed
+  9,                                                // entity address, back edge
+  SIDE_LENGTH,                                      // pixels in the entire entity
+  SIDE_LONG_HALF_LENGTH,                            // entity index of first pixel of this segment
+  SIDE_SHORT_HALF_LENGTH,                           // number of pixels in this segment
+  LOWER_DIAGONAL_LENGTH+SIDE_SHORT_HALF_LENGTH-1,   // slave index of first pixel of this segment
+  1,                                                // indexes are reversed
 };
 
 uint8_t slave_13[] = {
-  13,            // this slave's address
-  0x00, 0x01,    // version number, always 0x0001 for now
-  1,             // Starfish-style strands
-  18+EDGE_LENGTH/2, // pixels in strand
-  2,             // number of entities managed by this slave
+  13,                                           // this slave's address
+  0x01, 0x00,                                   // version number, always 0x0001 for now
+  1,                                            // Starfish-style strands
+  LOWER_DIAGONAL_LENGTH+SIDE_LONG_HALF_LENGTH,  // pixels in strand
+  2,                                            // number of entities managed by this slave
   // first entity descriptor
-  5,             // entity address, diagonal 5
-  68,            // pixels in the entire entity
-  0,             // entity index of first pixel of this segment
-  18,            // number of pixels in this segment
-  17,            // slave index of first pixel of this segment
-  1,             // indexes are reversed
+  5,                        // entity address, diagonal 5
+  DIAGONAL_LENGTH,          // pixels in the entire entity
+  0,                        // entity index of first pixel of this segment
+  LOWER_DIAGONAL_LENGTH,    // number of pixels in this segment
+  LOWER_DIAGONAL_LENGTH-1,  // slave index of first pixel of this segment
+  1,                        // indexes are reversed
   // second entity descriptor
-  10,            // entity address, right edge
-  EDGE_LENGTH,   // pixels in the entire entity
-  0,             // entity index of first pixel of this segment
-  EDGE_LENGTH/2, // number of pixels in this segment
-  18,            // slave index of first pixel of this segment
-  0,             // indexes are not reversed
+  10,                       // entity address, right edge
+  SIDE_LENGTH,              // pixels in the entire entity
+  0,                        // entity index of first pixel of this segment
+  SIDE_LONG_HALF_LENGTH,    // number of pixels in this segment
+  LOWER_DIAGONAL_LENGTH,    // slave index of first pixel of this segment
+  0,                        // indexes are not reversed
 };
 
 uint8_t slave_14[] = {
-  14,            // this slave's address
-  0x00, 0x01,    // version number, always 0x0001 for now
-  1,             // Starfish-style strands
-  18+EDGE_LENGTH/2, // pixels in strand
-  2,             // number of entities managed by this slave
+  14,                                           // this slave's address
+  0x01, 0x00,                                   // version number, always 0x0001 for now
+  1,                                            // Starfish-style strands
+  LOWER_DIAGONAL_LENGTH+SIDE_SHORT_HALF_LENGTH, // pixels in strand
+  2,                                            // number of entities managed by this slave
   // first entity descriptor
-  6,             // entity address, diagonal 6
-  68,            // pixels in the entire entity
-  0,             // entity index of first pixel of this segment
-  18,            // number of pixels in this segment
-  17,            // slave index of first pixel of this segment
-  1,             // indexes are reversed
+  6,                        // entity address, diagonal 6
+  DIAGONAL_LENGTH,          // pixels in the entire entity
+  0,                        // entity index of first pixel of this segment
+  LOWER_DIAGONAL_LENGTH,    // number of pixels in this segment
+  LOWER_DIAGONAL_LENGTH-1,  // slave index of first pixel of this segment
+  1,                        // indexes are reversed
   // second entity descriptor
-  10,            // entity address, right edge
-  EDGE_LENGTH,   // pixels in the entire entity
-  EDGE_LENGTH/2, // entity index of first pixel of this segment
-  EDGE_LENGTH/2, // number of pixels in this segment
-  18+EDGE_LENGTH/2,  // slave index of first pixel of this segment
-  1,             // indexes are reversed
+  10,                                               // entity address, right edge
+  SIDE_LENGTH,                                      // pixels in the entire entity
+  SIDE_LONG_HALF_LENGTH,                            // entity index of first pixel of this segment
+  SIDE_SHORT_HALF_LENGTH,                           // number of pixels in this segment
+  LOWER_DIAGONAL_LENGTH+SIDE_SHORT_HALF_LENGTH-1,   // slave index of first pixel of this segment
+  1,                                                // indexes are reversed
 };
 
 uint8_t slave_15[] = {
-  15,            // this slave's address
-  0x00, 0x01,    // version number, always 0x0001 for now
-  1,             // Starfish-style strands
-  18+FRONT_SEGMENT_LENGTH, // pixels in strand
-  2,             // number of entities managed by this slave
+  15,                                           // this slave's address
+  0x01, 0x00,                                   // version number, always 0x0001 for now
+  1,                                            // Starfish-style strands
+  LOWER_DIAGONAL_LENGTH+FRONT_SEGMENT_LENGTH,   // pixels in strand
+  2,                                            // number of entities managed by this slave
   // first entity descriptor
-  7,             // entity address, diagonal 7
-  68,            // pixels in the entire entity
-  0,             // entity index of first pixel of this segment
-  18,            // number of pixels in this segment
-  17,            // slave index of first pixel of this segment
-  1,             // indexes are reversed
+  7,                        // entity address, diagonal 7
+  DIAGONAL_LENGTH,          // pixels in the entire entity
+  0,                        // entity index of first pixel of this segment
+  LOWER_DIAGONAL_LENGTH,    // number of pixels in this segment
+  LOWER_DIAGONAL_LENGTH-1,  // slave index of first pixel of this segment
+  1,                        // indexes are reversed
   // second entity descriptor
-  11,            // entity address, front edge
-  EDGE_LENGTH,   // pixels in the entire entity
-  0,             // entity index of first pixel of this segment
-  FRONT_SEGMENT_LENGTH,  // number of pixels in this segment
-  18+FRONT_SEGMENT_LENGTH,  // slave index of first pixel of this segment
-  0,             // indexes are not reversed
+  11,                       // entity address, front edge
+  SIDE_LENGTH,              // pixels in the entire entity
+  0,                        // entity index of first pixel of this segment
+  FRONT_SEGMENT_LENGTH,     // number of pixels in this segment
+  LOWER_DIAGONAL_LENGTH,    // slave index of first pixel of this segment
+  0,                        // indexes are not reversed
 };
 
 
