@@ -10,6 +10,7 @@ Program with board = Duemilanove, processor = ATmega328
 
 Connect pixel strands to the SPI pins: 11 and 13
 Connect RS-485 adapter to RX (TX not used)
+Jumper TX on RS-485 adapter to digital pin 2.
 
 Entity-based addressing:
 Most visual operations are based on logical "entities", which are runs of pixels
@@ -55,10 +56,11 @@ time. Dynamics computations are strictly local to each pixel. Each pixel has an 
 ****************************************************************************/
 
 // Arduino pin assignments
-#define  DATA_PIN    11
-#define  CLOCK_PIN   13
-#define  DEBUG1_PIN  4
-#define  DEBUG2_PIN  7
+#define  DATA_PIN     11
+#define  CLOCK_PIN    13
+#define  DEBUG1_PIN    4
+#define  DEBUG2_PIN    7
+#define  RS485_TX_PIN  2
 
 // Packet command codes for slave commands
 #define  CMD_S_RESET_CLOCK  0x00
@@ -1113,6 +1115,17 @@ void setup() {
   
   // seed the random number generator, in case we use it
   randomSeed(analogRead(0));
+  
+  // The slave never transmits on the RS-485 bus. However, we can't leave the TX input
+  // unconnected, or else the RS-485 driver will sometimes decide to take over the bus
+  // and transmit, making it impossible for anyone on the bus to communicate. We don't
+  // want to wire the serial port's TX pin to the RS-485's TX, since then serial debug
+  // activities will also go out on the bus. The quick and easy solution was to insert
+  // a jumper between the TX pin and the D2 pin. We then have to pull up the D2 pin to
+  // prevent the RS-485 transceiver from ever transmitting. It would also be possible
+  // to transmit on RS-485 using SoftwareSerial on this pin, should that ever be needed.
+  pinMode(RS485_TX_PIN, OUTPUT);
+  digitalWrite(RS485_TX_PIN, HIGH);
   
   // set up debug output pins, for use with oscilloscope or logic analyzer
   pinMode(DEBUG1_PIN, OUTPUT);
