@@ -55,18 +55,25 @@ time. Dynamics computations are strictly local to each pixel. Each pixel has an 
 
 ****************************************************************************/
 
+#include <SoftwareSerial.h>
+
 // Arduino pin assignments
 #define  DATA_PIN     11
 #define  CLOCK_PIN    13
 #define  DEBUG1_PIN    4
 #define  DEBUG2_PIN    7
 #define  RS485_TX_PIN  2
+#define  SERIAL_PIN    8
+#define  UNUSED_PIN    9
+
+SoftwareSerial debug(UNUSED_PIN, SERIAL_PIN);
 
 // Packet command codes for slave commands
 #define  CMD_S_RESET_CLOCK  0x00
 #define  CMD_S_DYN_BLINK    0x01
 #define  CMD_S_DYN_THROB    0x02
 #define  CMD_S_DYN_SPARKLE  0x03
+#define	 CMD_S_COMMENT		0x04
 
 
 // Packet command codes for entity commands
@@ -123,6 +130,7 @@ uint16_t current_tick = 0;      // counter of ticks processed since powerup or o
 // Time-based commands are processed relative to this time origin,
 // which can be reset by command.
 unsigned long time_origin = 0;
+unsigned long last_tick_millis = 0;
 
 // Slave configuration info read from EEPROM
 uint8_t slave_address;
@@ -540,7 +548,7 @@ void refresh_segments(void) {
     decrement = segments[segment].reverse_index ? 2*BYTES_PER_PIXEL : 0;
     
     for (i=0; i < count; i++) {
-      for (j=0; i < BYTES_PER_PIXEL; j++) {
+      for (j=0; j < BYTES_PER_PIXEL; j++) {
         *dst++ = *src++;
       }
       dst -= decrement;      
@@ -674,10 +682,18 @@ void handle_packet(void) {
   uint16_t address = * (uint16_t *)(rcv_buffer + PKT_ADDRESS_OFFSET);
   
   if ((! entity_addressed) && ((address & slave_address_bitmap) != 0)) {
+    //debug.print("s");
+    //debug.print(rcv_buffer[0], HEX);
+    //debug.print(rcv_buffer[1], HEX);
+    //debug.println(rcv_buffer[2], HEX);
     handle_slave_packet();
   }
   
   if (entity_addressed && ((address & entity_address_bitmap) != 0)) {
+    //debug.print("e");
+    //debug.print(rcv_buffer[0], HEX);
+    //debug.print(rcv_buffer[1], HEX);
+    //debug.println(rcv_buffer[2], HEX);
     handle_entity_packet();
   }
 
@@ -691,8 +707,10 @@ void handle_slave_packet(void) {
   
   switch(command_code) {
     case CMD_S_RESET_CLOCK:      // reset the origin of time for event synchronization
+      //debug.println("clock reset");
       time_origin = millis();
       current_tick = 0;
+      last_tick_millis = 0;
       clear_deferred_queue();
       break;
    
@@ -723,6 +741,12 @@ void handle_slave_packet(void) {
       
     case CMD_S_DYN_SPARKLE:     // set parameters for dynamic effect SPARKLE
       dynamics_sparkle_probability = * (uint16_t *)p;
+      break;
+      
+    case CMD_S_COMMENT:			// packet that does nothing.
+      rcv_buffer[PACKET_MAX-1] = '\0';
+      debug.print("pkt: ");
+      debug.println((char *)p);
       break;
     
     default:
@@ -799,6 +823,9 @@ void clear_deferred_queue(void) {
 void execute_entity_packet(uint8_t *buf) {
   uint8_t entity;
   uint8_t addr;
+  
+  //debug.print("e@ ");
+  //debug.println(millis());
   
   // For each entity that we are handling, check if this entity is being addressed.
   for (entity = 0; entity < num_entities; entity++) {
@@ -1018,6 +1045,8 @@ void rotate_down(uint8_t *p, uint8_t entity_size, uint8_t n) {
 
 // Come here if we can't proceed. Blink the LED frantically.
 void fatal_error(void) {
+  debug.println("Fatal error!");
+  
   SPI.end();
   pinMode(13, OUTPUT);
   
@@ -1036,8 +1065,8 @@ void read_EEPROM(void) {
   uint8_t entity_address;
   
   slave_address = EEPROM.read(addr++);
-  config_version = EEPROM.read(addr++) * 0x100;  // opposite byte order
-  config_version += EEPROM.read(addr++);
+  config_version = EEPROM.read(addr++);
+  config_version += EEPROM.read(addr++) * 0x100;
   strand_type = EEPROM.read(addr++);
   pixels_in_strand = EEPROM.read(addr++);
   num_segments = EEPROM.read(addr++);
@@ -1047,6 +1076,15 @@ void read_EEPROM(void) {
       strand_type > 1          ||
       num_segments > MAX_SEGMENTS) {
     // Error in configuration data!
+    debug.println("Configuration error");
+    debug.print("slave address = ");
+    debug.println(slave_address, HEX);
+    debug.print("config version = ");
+    debug.println(config_version, HEX);
+    debug.print("strand type = ");
+    debug.println(strand_type);
+    debug.print("number of segments = ");
+    debug.println(num_segments);
     fatal_error();
   }
   
@@ -1132,6 +1170,10 @@ void setup() {
   pinMode(DEBUG2_PIN, OUTPUT);
   digitalWrite(DEBUG1_PIN, LOW);
   digitalWrite(DEBUG2_PIN, LOW);
+  
+  // set up serial port for debug
+  debug.begin(115200);
+  debug.println("Isis 1.1 Slave");
 
   // obtain configuration info. Doesn't return if config is invalid.
   read_EEPROM();
@@ -1155,7 +1197,6 @@ void setup() {
 }
 
 void loop() {
-  static unsigned long last_tick_millis = 0;
   unsigned long t;
   
   // process incomding network commands
@@ -1183,5 +1224,6 @@ void tick(void) {
   scan_deferred_queue();
     
   current_tick++;
+  
 }
 
