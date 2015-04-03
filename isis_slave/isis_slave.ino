@@ -89,8 +89,8 @@ time. Dynamics computations are strictly local to each pixel. Each pixel has an 
 // All entity packets share a common header.
 #define  PKT_REPEAT_COUNT_OFFSET     3
 #define  PKT_EFFECTIVE_TIME_OFFSET   4    // uint16_t
-#define  PKT_REPEAT_INTERVAL_OFFSET  6
-#define  PKT_E_DATA_OFFSET           7    // any number of packet-specific arguments
+#define  PKT_REPEAT_INTERVAL_OFFSET  6    // uint16_t
+#define  PKT_E_DATA_OFFSET           8    // any number of packet-specific arguments
 
 #define  PACKET_MAX                 15    // number of bytes in longest valid packet
                                           // applies to slave or entity packets
@@ -691,6 +691,7 @@ void handle_slave_packet(void) {
     case CMD_S_RESET_CLOCK:      // reset the origin of time for event synchronization
       time_origin = millis();
       current_tick = 0;
+      clear_deferred_queue();
       break;
    
     case CMD_S_DYN_BLINK:        // set parameters for dynamic effect BLINK
@@ -774,11 +775,20 @@ void scan_deferred_queue(void) {
         repeat_count--;
         deferred_queue[i][PKT_REPEAT_COUNT_OFFSET] = repeat_count;
         if (repeat_count > 0) {
-        effective_time += deferred_queue[i][PKT_REPEAT_INTERVAL_OFFSET];
+        effective_time += * (uint16_t *)(deferred_queue[i] + PKT_REPEAT_INTERVAL_OFFSET);
         * (uint16_t *) (deferred_queue[i] + PKT_EFFECTIVE_TIME_OFFSET) = effective_time;
         }
       }
     }
+  }
+}
+
+// Clear out the deferred operations queue.
+void clear_deferred_queue(void) {
+  uint8_t i;
+  
+  for (i=0; i < QUEUE_MAX; i++) {
+    deferred_queue[i][PKT_REPEAT_COUNT_OFFSET] = 0;    // set all repeat counts to zero
   }
 }
 
