@@ -830,8 +830,8 @@ void execute_entity_packet(uint8_t *buf) {
   // For each entity that we are handling, check if this entity is being addressed.
   for (entity = 0; entity < num_entities; entity++) {
     addr = entities[entity].address;
-    if ((buf[PKT_ADDRESS_OFFSET+1] & (1 << addr)) ||
-        (buf[PKT_ADDRESS_OFFSET] & (1 << (addr-8)))) {
+    if ((buf[PKT_ADDRESS_OFFSET] & (1 << addr)) ||
+        (buf[PKT_ADDRESS_OFFSET+1] & (1 << (addr-8)))) {
           execute_packet_for_entity(entity, buf);
     }
   }
