@@ -5,6 +5,7 @@
 #define  CMD_S_DYN_BLINK    0x01
 #define  CMD_S_DYN_THROB    0x02
 #define  CMD_S_DYN_SPARKLE  0x03
+#define  CMD_S_COMMENT      0x04
 
 
 // Packet command codes for entity commands
@@ -48,6 +49,7 @@
 #define	META_CONSOLE	0x00
 #define	META_WAIT	0x01
 #define	META_ENDS	0x02
+#define META_RESET_TIME 0x03
 
 
 // The following types of dynamics are defined:

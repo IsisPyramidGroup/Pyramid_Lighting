@@ -41,6 +41,9 @@
 #define  TICK_LENGTH    10      // milliseconds per tick
 uint16_t current_tick = 0;      // counter of ticks processed since powerup or origin reset
                                 // designer is supposed to make sure this never wraps around (10+ minutes)
+                                
+unsigned long last_tick_millis = 0;  // time when we last processed a tick
+
 
 // Time-based commands in the slaves are processed relative to a local time
 // origin. Here in the master it's helpful to keep a time base that's more or less
@@ -98,8 +101,7 @@ uint8_t pkt_count;
 byte state = IDLE;
 
 void handle_file_byte(byte bytein) {
-  static byte state = IDLE;
-    
+  
   switch (state) {
     case	IDLE:
       if (bytein == FEND) {
@@ -140,11 +142,12 @@ void handle_file_byte(byte bytein) {
 
 
 // simply add a "received" byte to the packet re-assembly buffer
-void add_to_pkt_buffer(byte in) {  
+void add_to_pkt_buffer(byte in) {
   pkt_buffer[pkt_count] = in;
   pkt_count++;
-  if (pkt_count >= PACKET_MAX)              // overflow! Shouldn't happen.
+  if (pkt_count >= PACKET_MAX) {              // overflow! Shouldn't happen.
     state = IDLE;
+  }
 }
 
 
@@ -167,17 +170,24 @@ void handle_file_packet(void) {
         
       case META_ENDS:
         program_end_tick = value;  // note when the current program is supposed to end
-        ready_next_file();         // take advantage of any extra to to prep the next program        
+        waitfor_tick = value;      // also implies that we wait for the program to finish
+        ready_next_file();         // take advantage of any extra to to prep the next program    
         break;
         
+      case META_RESET_TIME:
+        time_origin = millis();    // reset the master's time; might or might not coincide with slave reset
+        current_tick = 0;
+        last_tick_millis = 0;
+        waitfor_tick = 0;          // cancels any waiting we're doing.
+        break;
+              
       default:      // unknown meta command
         break;
     }
   } else {  // we have a packet to forward to the slaves
     send_packet(pkt_count, pkt_buffer);
   }
-}
-  
+}  
 
 // At the beginning of any timeline of predefined activities, it's a good idea
 // to resynchronize (if it isn't too disruptive). This routine restarts the local
@@ -192,7 +202,7 @@ void reset_time_origin(void) {
   send_packet(3, packet);
     
   // reset local timeline
-  time_origin = 0;
+  time_origin = millis();
   waitfor_tick = 0;
   
   // Note: we don't try to get absolute synchrony between the slave time and the
@@ -324,7 +334,6 @@ void setup() {
 }
 
 void loop() {
-  static unsigned long last_tick_millis = 0;
   unsigned long t;
     
   // every 10ms, perform tick-based processing
