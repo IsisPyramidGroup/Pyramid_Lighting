@@ -707,7 +707,7 @@ void handle_slave_packet(void) {
   
   switch(command_code) {
     case CMD_S_RESET_CLOCK:      // reset the origin of time for event synchronization
-      //debug.println("clock reset");
+      //println("clock reset");
       time_origin = millis();
       current_tick = 0;
       last_tick_millis = 0;
@@ -791,7 +791,7 @@ void scan_deferred_queue(void) {
   uint16_t effective_time;
   uint8_t  repeat_count;
   uint8_t i;
-  
+    
   for (i = 0; i < QUEUE_MAX; i++) {
     repeat_count = deferred_queue[i][PKT_REPEAT_COUNT_OFFSET];
     if (repeat_count != 0) {
@@ -812,7 +812,7 @@ void scan_deferred_queue(void) {
 // Clear out the deferred operations queue.
 void clear_deferred_queue(void) {
   uint8_t i;
-  
+    
   for (i=0; i < QUEUE_MAX; i++) {
     deferred_queue[i][PKT_REPEAT_COUNT_OFFSET] = 0;    // set all repeat counts to zero
   }
@@ -824,8 +824,8 @@ void execute_entity_packet(uint8_t *buf) {
   uint8_t entity;
   uint8_t addr;
   
-  //debug.print("e@ ");
-  //debug.println(millis());
+  debug.print("e@ ");
+  debug.println(current_tick);
   
   // For each entity that we are handling, check if this entity is being addressed.
   for (entity = 0; entity < num_entities; entity++) {
@@ -917,7 +917,7 @@ void execute_packet_for_entity(uint8_t entity, uint8_t *buf) {
       // shift down
       memmove(p, p + n*BYTES_PER_PIXEL, (entities[entity].pixel_count-n)*BYTES_PER_PIXEL);
       // and fill the vacated pixels with the specified constant
-      p += n * BYTES_PER_PIXEL;
+      p += (entities[entity].pixel_count-n) * BYTES_PER_PIXEL;
       for (pixel = 0; pixel < n; pixel++) {
         *p++ = r;
         *p++ = g;
