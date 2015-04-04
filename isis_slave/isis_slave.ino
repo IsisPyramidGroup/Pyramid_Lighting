@@ -824,14 +824,20 @@ void execute_entity_packet(uint8_t *buf) {
   uint8_t entity;
   uint8_t addr;
   
-  debug.print("e@ ");
-  debug.println(current_tick);
-  
   // For each entity that we are handling, check if this entity is being addressed.
   for (entity = 0; entity < num_entities; entity++) {
     addr = entities[entity].address;
-    if ((buf[PKT_ADDRESS_OFFSET] & (1 << addr)) ||
-        (buf[PKT_ADDRESS_OFFSET+1] & (1 << (addr-8)))) {
+    if (((addr < 8) && (buf[PKT_ADDRESS_OFFSET] & (1 << addr))) ||
+        ((addr < 16) && (addr >= 8) && (buf[PKT_ADDRESS_OFFSET+1] & (1 << (addr-8))))) {
+          //debug.print("e@ ");
+          //debug.print(addr);
+          //debug.print(" bm=");
+          //debug.print(buf[PKT_ADDRESS_OFFSET+1], HEX);
+          //debug.print(" ");
+          //debug.print(buf[PKT_ADDRESS_OFFSET], HEX);
+          //debug.print(" t=");
+          //debug.println(current_tick);
+  
           execute_packet_for_entity(entity, buf);
     }
   }
