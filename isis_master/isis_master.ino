@@ -210,16 +210,6 @@ void reset_time_origin(void) {
   // to be processed, so chances are the slaves will lag a bit. That's OK.
 }
 
-// !!!
-// Here are all the old button meanings:
-//   Black center:  hold current pattern (i.e, don't return from function)
-//   Red right:     rotating beacon of red
-//   Yellow left:   fill with color (+red, +blue, +green in RGB combos, black dims)
-//   Blue top:      flashing beacon of blue
-void process_new_button_state(uint8_t buttons) {
-  //!!! implement this
-  
-}
 
 
 // The SD card contains a file named PLAYLIST.TXT, which contains a list of filenames.
@@ -309,6 +299,7 @@ void ready_next_file(void) {
   }
   file_get_filename(playlist_index);      // obtain the next filename
   lp_file = SD.open(filename);
+  display_number(playlist_index);
 }
             
 
@@ -352,16 +343,105 @@ void loop() {
 
 // Periodic time processing
 void tick(void) {
-  static uint8_t prev_buttons = 0;
-  uint8_t buttons;
   
-  buttons = scan_buttons();
-  if (buttons != prev_buttons) {
-      prev_buttons = buttons;
-      
-      process_new_button_state(buttons);
-  }
+  buttons();
   
   current_tick++;
 }
   
+// debounce the buttons before processing them
+void buttons(void) {
+  uint8_t buttons;
+  static uint8_t button_state;
+  static uint8_t prev_buttons = 0;
+  static long prev_button_time = 0;
+  
+  buttons = scan_buttons();
+  
+  if (buttons != prev_buttons) {
+    prev_button_time = millis();
+  }
+  
+  if ((millis() - prev_button_time) > 50) {
+    
+    if (buttons != button_state) {
+      button_state = buttons;
+      process_new_button_state(buttons);
+    }
+  }
+  
+  prev_buttons = buttons;
+}
+
+// !!!
+// Here are all the old button meanings:
+//   Black center:  hold current pattern (i.e, don't return from function)
+//   Red right:     rotating beacon of red
+//   Yellow left:   fill with color (+red, +blue, +green in RGB combos, black dims)
+//   Blue top:      flashing beacon of blue
+
+
+// Dispatch button processing based on new button-down events
+void process_new_button_state(uint8_t buttons) {
+  static uint8_t old_buttons;
+  uint8_t new_buttons = buttons & ~old_buttons;
+  
+  if (new_buttons & BUTTON_RED) {
+    button_down_red();
+  }
+
+  if (new_buttons & BUTTON_BLACK) {
+    button_down_black();
+  }
+  
+  if (new_buttons & BUTTON_BLUE) {
+    button_down_blue;
+    }
+    
+  if (new_buttons & BUTTON_GREEN) {
+    button_down_green();
+    }
+    
+  if (new_buttons & BUTTON_YELLOW) {
+    button_down_yellow();
+    }
+    
+  old_buttons = buttons;
+}
+
+// The red button jumps ahead to begin the next lighting program.
+void button_down_red(void) {
+  
+  waitfor_tick = 0;
+  ready_next_file();
+  
+}
+
+// The black button restarts the current lighting program.
+void button_down_black(void) {
+  
+  waitfor_tick = 0;
+  playlist_index--;
+  ready_next_file();
+  
+}
+
+// The yellow button goes back to the very first lighting program
+void button_down_yellow(void) {
+  
+  waitfor_tick = 0;
+  playlist_index = 0;
+  ready_next_file();
+  
+}
+
+void button_down_blue(void) {
+  
+}
+
+void button_down_green(void) {
+  
+}
+
+
+
