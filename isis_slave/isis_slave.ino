@@ -767,7 +767,7 @@ void handle_entity_packet(void) {
   uint16_t effective_time = * (uint16_t *)(rcv_buffer + PKT_EFFECTIVE_TIME_OFFSET);
   uint8_t i;
 
-  if (repeat_count == 1 && (effective_time == 0 || effective_time <= current_tick)) {
+  if (repeat_count == 1 && (effective_time == 0)) { // || effective_time <= current_tick)) {
   	execute_entity_packet(rcv_buffer);
   	return;
   }
@@ -801,8 +801,12 @@ void scan_deferred_queue(void) {
         repeat_count--;
         deferred_queue[i][PKT_REPEAT_COUNT_OFFSET] = repeat_count;
         if (repeat_count > 0) {
-        effective_time += * (uint16_t *)(deferred_queue[i] + PKT_REPEAT_INTERVAL_OFFSET);
-        * (uint16_t *) (deferred_queue[i] + PKT_EFFECTIVE_TIME_OFFSET) = effective_time;
+          if (effective_time == 0) {  // this packet took effect immediately; repeats count from now.
+            effective_time = current_tick + * (uint16_t *)(deferred_queue[i] + PKT_REPEAT_INTERVAL_OFFSET);
+          } else {
+            effective_time += * (uint16_t *)(deferred_queue[i] + PKT_REPEAT_INTERVAL_OFFSET);
+          }
+          * (uint16_t *) (deferred_queue[i] + PKT_EFFECTIVE_TIME_OFFSET) = effective_time;
         }
       }
     }
