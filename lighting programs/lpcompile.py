@@ -56,6 +56,12 @@ META_WAIT    = 0x01
 META_ENDS    = 0x02
 META_RESET_TIME = 0x03
 
+# Dynamic effect codes
+DYN_BLINK =   0x01
+DYN_THROB =   0x02
+DYN_SPARKLE = 0x04
+
+
 # special codes for byte stuffing, per KISS or SLIP protocol standards.
 FEND = 0xC0
 FESC = 0xDB
@@ -135,7 +141,7 @@ def cmd_s_dyn_throb(bitmap, period, ramptime, bright, dim):
 def cmd_s_dyn_sparkle(bitmap, probability):
     """Insert a DYN_SPARKLE packet addressed to the slaves shown in bitmap.
     """
-    write_packet([CMD_S_DYN_SPARKLE, LO(bitmap), HI(bitmap), probability])
+    write_packet([CMD_S_DYN_SPARKLE, LO(bitmap), HI(bitmap), LO(probability), HI(probability)])
 
 def comment(string):
 	"""Insert a comment packet, nominally addressed to all slaves. This does nothing
